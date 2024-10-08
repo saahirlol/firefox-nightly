@@ -27,7 +27,7 @@ RUN \
     /etc/apt/sources.list.d/firefox.list && \
   apt-get update && \
   apt-get install -y --no-install-recommends \
-    firefox \
+    firefox-nightly \
     ^firefox-locale && \
   echo "**** default firefox settings ****" && \
   FIREFOX_SETTING="/usr/lib/firefox/browser/defaults/preferences/firefox.js" && \
