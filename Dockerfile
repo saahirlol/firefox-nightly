@@ -1,35 +1,34 @@
 FROM ghcr.io/linuxserver/baseimage-kasmvnc:ubuntunoble
 
-# set version label
+# Set version label
 ARG BUILD_DATE
 ARG VERSION
 ARG FIREFOX_VERSION
 LABEL build_version="Linuxserver.io version:- ${VERSION} Build-date:- ${BUILD_DATE}"
 LABEL maintainer="thelamer"
 
-# title
+# Title
 ENV TITLE=Firefox
 
-# prevent Ubuntu's firefox stub from being installed
+# Copy preferences to disable snap installation for Firefox
 COPY /root/etc/apt/preferences.d/firefox-no-snap /etc/apt/preferences.d/firefox-no-snap
 
 RUN \
-  echo "**** add icon ****" && \
-  curl -o \
-    /kclient/public/icon.png \
+  echo "**** Add icon ****" && \
+  curl -o /kclient/public/icon.png \
     https://raw.githubusercontent.com/linuxserver/docker-templates/master/linuxserver.io/img/firefox-logo.png && \
-  echo "**** install packages ****" && \
-  apt-key adv \
-    --keyserver hkp://keyserver.ubuntu.com:80 \
-    --recv-keys 738BEB9321D1AAEC13EA9391AEBDF4819BE21867 && \
-  echo \
-    "deb https://ppa.launchpadcontent.net/mozillateam/ppa/ubuntu noble main" > \
+  echo "**** Install packages ****" && \
+  # Add GPG key
+  curl -fsSL https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xAEBDF4819BE21867 | \
+    gpg --dearmor -o /usr/share/keyrings/mozillateam-archive-keyring.gpg && \
+  # Add Firefox PPA
+  echo "deb [signed-by=/usr/share/keyrings/mozillateam-archive-keyring.gpg] https://ppa.launchpadcontent.net/mozillateam/ppa/ubuntu noble main" > \
     /etc/apt/sources.list.d/firefox.list && \
   apt-get update && \
   apt-get install -y --no-install-recommends \
     firefox-nightly \
     ^firefox-locale && \
-  echo "**** default firefox settings ****" && \
+  echo "**** Configure Firefox settings ****" && \
   FIREFOX_SETTING="/usr/lib/firefox/browser/defaults/preferences/firefox.js" && \
   echo 'pref("datareporting.policy.firstRunURL", "");' > ${FIREFOX_SETTING} && \
   echo 'pref("datareporting.policy.dataSubmissionEnabled", false);' >> ${FIREFOX_SETTING} && \
@@ -37,14 +36,12 @@ RUN \
   echo 'pref("datareporting.healthreport.uploadEnabled", false);' >> ${FIREFOX_SETTING} && \
   echo 'pref("trailhead.firstrun.branches", "nofirstrun-empty");' >> ${FIREFOX_SETTING} && \
   echo 'pref("browser.aboutwelcome.enabled", false);' >> ${FIREFOX_SETTING} && \
-  echo "**** cleanup ****" && \
-  rm -rf \
-    /tmp/*
+  echo "**** Cleanup ****" && \
+  rm -rf /var/lib/apt/lists/* /tmp/*
 
-# add local files
+# Add local files
 COPY /root /
 
-# ports and volumes
+# Ports and volumes
 EXPOSE 3000
-
 VOLUME /config
